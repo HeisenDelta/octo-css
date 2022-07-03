@@ -1,18 +1,19 @@
+from asyncio.windows_events import NULL
+from inspect import _void
 import os
 import json
-from tkinter.tix import IMAGE
 import numpy as np
+import scipy.interpolate
 import cv2
 from matplotlib import pyplot as plt
 from PIL import Image as im
 import random
 
 
-def image_to_vector(IMG_NAME, IMG_EXTENSION):
+def image_to_vector(IMG_NAME: str, IMG_EXTENSION: str) -> int:
 
     img = cv2.imread(f'{IMG_NAME}.{IMG_EXTENSION}', 0)
     edges = cv2.Canny(img, 50, 100)
-    formatted_edges = (img > 0).astype(int)
 
     plt.imshow(edges, cmap = 'gray')
     plt.xticks([])
@@ -23,13 +24,11 @@ def image_to_vector(IMG_NAME, IMG_EXTENSION):
     pixel_data = im.fromarray(edges)
     pixel_data.save(f'{IMG_NAME}_{seed}.bmp')
 
-    # print(edges[0][:100], '\n', formatted_edges[0][:100])
-
     plt.show()
 
     return seed
 
-def run_potrace(IMG_NAME, seed):
+def run_potrace(IMG_NAME: str, seed: int):
 
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     bmp_name = f'{IMG_NAME}_{seed}.bmp'
@@ -43,7 +42,7 @@ def run_potrace(IMG_NAME, seed):
     # subprocess.Popen(['potrace ' + bmp_name, '-b geojson'])
     os.system(f'potrace {bmp_name} -b geojson')
 
-def parse_json(IMG_NAME, seed):
+def parse_json(IMG_NAME: str, seed: int):
 
     with open(f'{IMG_NAME}_{seed}.json', 'r') as fl:
         json_text = json.load(fl)
@@ -51,7 +50,14 @@ def parse_json(IMG_NAME, seed):
         for ucoord in json_text['features']:
             coords = ucoord['geometry']['coordinates'][0]
 
-            for x in coords: plt.plot(x[0], x[1], 'o', markersize = 0.1)
+            for idx in range(0, len(coords) - 3, 3):
+                base_string = '<path d="'
+                fin_string = '" stroke="white" stroke-width="1" fill="none" />'
+
+                base_string += f'M {coords[idx][0]} {coords[idx][1]} S {coords[idx + 1][0]} {coords[idx + 1][1]} {coords[idx + 2][0]} {coords[idx + 2][1]}' + fin_string
+                print(base_string)
+
+            break
 
         plt.show()
 
